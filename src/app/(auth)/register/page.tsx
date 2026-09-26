@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { signUp } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"; // authClient import করা হয়েছে
 import {
   FiUser,
   FiMail,
@@ -40,40 +40,48 @@ export default function RegisterPage() {
     try {
       setErrorMessage(null);
 
-      const { error } = await signUp.email({
+      // authClient ব্যবহার করে সাইন আপ করা হচ্ছে
+      const { error } = await authClient.signUp.email({
         email: data.emailOrPhone,
         password: data.password,
         name: data.name,
+        callbackURL: "/",
       });
 
       if (error) {
-        setErrorMessage(error.message || "রেজিস্ট্রেশন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+        setErrorMessage(error.message || "রেজিস্ট্রেশন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
         return;
       }
       router.push("/");
     } catch (error) {
       console.error("Registration failed:", error);
-      setErrorMessage("কোথাও কোনো সমস্যা হয়েছে। দয়া করে আবার চেষ্টা করুন।");
+      setErrorMessage("কোথাও কোনো সমস্যা হয়েছে। দয়া করে আবার চেষ্টা করুন।");
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Google login clicked");
-
+  // Google OAuth Login Handler
+  const handleGoogleLogin = async () => {
+    try {
+      setErrorMessage(null);
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+    } catch (error) {
+      console.error("Google login failed:", error);
+      setErrorMessage("গুগল লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    }
   };
 
   return (
     <main className="min-h-screen bg-[#030712] text-white flex items-center justify-center px-4 py-8 relative overflow-hidden">
       
-
       <div className="absolute top-[-180px] left-[-180px] w-[420px] h-[420px] rounded-full bg-amber-500/10 blur-[120px]" />
       <div className="absolute bottom-[-180px] right-[-180px] w-[420px] h-[420px] rounded-full bg-orange-500/10 blur-[120px]" />
 
-   
       <div className="relative w-full max-w-[1050px] min-h-[600px] bg-[#0b1224] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
 
         <section className="hidden lg:flex lg:w-[43%] relative p-10 xl:p-12 flex-col justify-between border-r border-white/[0.07] bg-gradient-to-br from-[#111a31] to-[#080e1d]">
-
           <div className="absolute -top-28 -right-28 w-72 h-72 rounded-full border border-amber-400/[0.08]" />
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full border border-amber-400/[0.06]" />
 
@@ -129,9 +137,7 @@ export default function RegisterPage() {
           <p className="relative z-10 text-xs text-slate-500">
             Create • Customize • Share
           </p>
-
         </section>
-
 
         <section className="w-full lg:w-[57%] flex items-center justify-center px-6 py-10 sm:px-10 lg:px-12 xl:px-16">
           <div className="w-full max-w-[500px]">
@@ -290,7 +296,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Terms */}
               <p className="text-[11px] leading-5 text-slate-500 pt-1">
                 By creating an account, you agree to our{" "}
                 <Link href="/terms" className="text-slate-400 hover:text-amber-400 transition-colors underline">

@@ -57,14 +57,16 @@ export default function LoginPage() {
 
   // Google OAuth Login Handler
   const handleGoogleLogin = async () => {
-    // try {
-    //   await authClient.signIn.social({
-    //     provider: "google",
-    //     callbackURL: "/",
-    //   });
-    // } catch (error) {
-    //   console.error("Google login failed:", error);
-    // }
+    try {
+      setErrorMessage(null);
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+    } catch (error) {
+      console.error("Google login failed:", error);
+      setErrorMessage("Google login failed. Please try again.");
+    }
   };
 
   return (
