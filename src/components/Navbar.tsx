@@ -7,10 +7,10 @@ import { authClient } from "@/lib/auth-client";
 import { FiMenu, FiX, FiUser, FiHome, FiImage, FiPlusCircle, FiSettings, FiLogOut } from 'react-icons/fi';
 
 const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: FiHome },
+  { name: 'Home', path: '/', icon: FiImage },
   { name: 'New Poster', path: '/create-poster', icon: FiPlusCircle },
-  { name: 'My Poster', path: '/posters', icon: FiImage },
   { name: 'Template', path: '/templates', icon: FiSettings },
+  { name: 'Dashboard', path: '/dashboard/profile', icon: FiHome },
 ];
 
 const Navbar = () => {

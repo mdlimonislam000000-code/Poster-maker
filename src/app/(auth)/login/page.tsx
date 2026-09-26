@@ -34,16 +34,13 @@ export default function LoginPage() {
     mode: "onBlur",
   });
 
-  // Email/Password Login Handler
   const onSubmit = async (data: LoginFormData) => {
     try {
       setErrorMessage(null);
-
-      // BetterAuth sign-in call
       const { error } = await authClient.signIn.email({
-        email: data.emailOrPhone, // যদি ইমেইল হয়
+        email: data.emailOrPhone, 
         password: data.password,
-        callbackURL: "/", // সফল লগইনের পর কোথায় যাবে
+        callbackURL: "/", 
       });
 
       if (error) {
@@ -60,31 +57,28 @@ export default function LoginPage() {
 
   // Google OAuth Login Handler
   const handleGoogleLogin = async () => {
-    try {
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
-      });
-    } catch (error) {
-      console.error("Google login failed:", error);
-    }
+    // try {
+    //   await authClient.signIn.social({
+    //     provider: "google",
+    //     callbackURL: "/",
+    //   });
+    // } catch (error) {
+    //   console.error("Google login failed:", error);
+    // }
   };
 
   return (
     <main className="min-h-screen bg-[#030712] text-white flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Background Glow */}
+
       <div className="absolute top-[-180px] left-[-180px] w-[420px] h-[420px] rounded-full bg-amber-500/10 blur-[120px]" />
       <div className="absolute bottom-[-180px] right-[-180px] w-[420px] h-[420px] rounded-full bg-orange-500/10 blur-[120px]" />
 
-      {/* Main Card */}
       <div className="relative w-full max-w-[1050px] min-h-[600px] bg-[#0b1224] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
         
-        {/* LEFT SIDE */}
         <section className="hidden lg:flex lg:w-[43%] relative p-10 xl:p-12 flex-col justify-between border-r border-white/[0.07] bg-gradient-to-br from-[#111a31] to-[#080e1d]">
           <div className="absolute -top-28 -right-28 w-72 h-72 rounded-full border border-amber-400/[0.08]" />
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full border border-amber-400/[0.06]" />
 
-          {/* Logo */}
           <div className="relative z-10">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
@@ -99,7 +93,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="relative z-10 max-w-[390px]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-400/20 bg-amber-400/[0.06] mb-6">
               <FiStar className="text-amber-400 text-xs" />
@@ -136,7 +129,6 @@ export default function LoginPage() {
           </p>
         </section>
 
-        {/* RIGHT SIDE */}
         <section className="w-full lg:w-[57%] flex items-center justify-center px-6 py-10 sm:px-10 lg:px-12 xl:px-16">
           <div className="w-full max-w-[500px]">
             <div className="mb-7">
@@ -148,14 +140,12 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Global Error Alert */}
             {errorMessage && (
               <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
                 {errorMessage}
               </div>
             )}
 
-            {/* Google Login */}
             <button
               type="button"
               onClick={handleGoogleLogin}
@@ -165,7 +155,6 @@ export default function LoginPage() {
               Continue with Google
             </button>
 
-            {/* Divider */}
             <div className="flex items-center gap-4 my-6">
               <div className="h-px flex-1 bg-white/[0.08]" />
               <span className="text-[11px] uppercase tracking-wider text-slate-500 font-medium whitespace-nowrap">
@@ -174,10 +163,8 @@ export default function LoginPage() {
               <div className="h-px flex-1 bg-white/[0.08]" />
             </div>
 
-            {/* LOGIN FORM */}
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
               
-              {/* Email */}
               <div>
                 <label
                   htmlFor="emailOrPhone"
@@ -213,7 +200,6 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label
@@ -265,7 +251,6 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -285,7 +270,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Register Link */}
             <p className="text-center text-sm text-slate-500 mt-6">
               Don't have an account?{" "}
               <Link
