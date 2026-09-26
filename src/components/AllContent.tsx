@@ -1,10 +1,12 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { FiDownload, FiLoader, FiTrash2 } from 'react-icons/fi';
+import { FiDownload, FiLoader, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 import html2canvas from 'html2canvas';
 import { authClient } from "@/lib/auth-client";
 
 export default function AllContent() {
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id || "user_limon_mia";
 
@@ -22,7 +24,6 @@ export default function AllContent() {
       try {
         setLoading(true);
 
-        // একসাথে poster এবং template দুই জায়গা থেকেই ডাটা ফেচ করা হচ্ছে
         const [postersRes, templatesRes] = await Promise.all([
           fetch(`http://localhost:5000/api/users/${userId}/posters`),
           fetch(`http://localhost:5000/api/templates/user/${userId}`)
@@ -33,27 +34,23 @@ export default function AllContent() {
 
         let combinedItems: any[] = [];
 
-        // Posters যোগ করা (যদি সফল হয়)
         if (postersData.success && Array.isArray(postersData.data)) {
           const formattedPosters = postersData.data.map((p: any) => ({
             ...p,
-            dataType: 'poster' // চেনার জন্য টাইপ ট্যাগ যুক্ত করা হলো
+            dataType: 'poster'
           }));
           combinedItems = [...combinedItems, ...formattedPosters];
         }
 
-        // Templates যোগ করা (যদি সফল হয়)
         if (templatesData.success && Array.isArray(templatesData.data)) {
           const formattedTemplates = templatesData.data.map((t: any) => ({
             ...t,
-            dataType: 'template' // চেনার জন্য টাইপ ট্যাগ যুক্ত করা হলো
+            dataType: 'template'
           }));
           combinedItems = [...combinedItems, ...formattedTemplates];
         }
 
-        // চাইলে createdAt অনুযায়ী সর্ট করে লেটেস্টগুলো আগে দেখাতে পারেন
         combinedItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
         setItems(combinedItems);
 
         if (!postersData.success && !templatesData.success) {
@@ -95,7 +92,14 @@ export default function AllContent() {
     }
   };
 
-  // dataType অনুযায়ী সঠিক API তে DELETE রিকোয়েস্ট পাঠানোর ফাংশন
+  const handleReuse = (dataType: string, itemId: string) => {
+    if (dataType === 'template') {
+      router.push(`/templates`);
+    } else {
+      router.push(`/create-poster`);
+    }
+  };
+
   const handleDelete = async (itemId: string, dataType: string) => {
     const confirmMsg = dataType === 'poster' 
       ? "Apni ki nischot je ei poster-ti delete korte chan?" 
@@ -105,11 +109,9 @@ export default function AllContent() {
 
     try {
       setDeletingId(itemId);
-      
-      // dataType এর ওপর ভিত্তি করে সঠিক endpoint সিলেক্ট করা হচ্ছে
       const endpoint = dataType === 'poster' 
         ? `http://localhost:5000/api/posters/${itemId}`
-        : `http://localhost:5000/api/templates/${itemId}`; // অথবা আপনার টেমপ্লেট ডিলিট রুট
+        : `http://localhost:5000/api/templates/${itemId}`;
 
       const response = await fetch(endpoint, {
         method: "DELETE",
@@ -157,14 +159,10 @@ export default function AllContent() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item) => {
         const data = item.formData || item;
-        const itemImage = 
-          item.generatedImageUrl || 
-          item.photos?.[0] || 
-          item.photo || 
-          data.photos?.[0] || 
-          null;
+        const itemImage = item.generatedImageUrl;
 
-        const titleText = item.title || data.headlineText || data.name || 'Design';
+        const titleText = item.title || data.headlineText || data.name || 'Design Title';
+        const isTemplate = item.dataType === 'template';
 
         return (
           <div key={item._id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md flex flex-col justify-between">
@@ -181,39 +179,27 @@ export default function AllContent() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <span style={{ fontSize: "10px", backgroundColor: "rgba(245, 158, 11, 0.1)", color: "#fbbf24", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", textTransform: "uppercase" }}>
-                  {item.dataType === 'poster' ? (data.occasionType || 'Poster') : (item.category || 'Template')}
+                  {isTemplate ? (item.category || 'Template') : (data.occasionType || 'Poster')}
                 </span>
                 <span style={{ fontSize: "10px", color: "#94a3b8" }}>
                   {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Tarikh nei'}
                 </span>
               </div>
 
-              {/* Image Box */}
-              <div style={{ width: "100%", height: "140px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px" }}>
+              {/* Poster Box - height বাড়িয়ে দিয়ে full দেখানোর ব্যবস্থা করা হয়েছে */}
+              <div style={{ width: "100%", height: "380px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {itemImage ? (
-                  <img src={itemImage} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
+                  <img src={itemImage} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} crossOrigin="anonymous" />
                 ) : (
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Kono chobi dewa hoyni</div>
+                  <div style={{ fontSize: "11px", color: "#64748b" }}>Kono chobi dewa hoyni</div>
                 )}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top, rgba(2, 6, 23, 0.9), transparent)" }}>
-                  <h3 style={{ fontSize: "12px", fontWeight: "bold", color: "#fde047", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    "{titleText}"
-                  </h3>
-                </div>
               </div>
 
-              <div style={{ marginTop: "8px" }}>
-                <h4 style={{ fontSize: "12px", fontWeight: "bold", color: "#ffffff", margin: "0 0 4px 0" }}>
-                  {data.name ? `Nam: ${data.name}` : `Title: ${item.title || 'N/A'}`}
-                </h4>
-                {data.designation && (
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 2px 0" }}>
-                    Podobi: <span style={{ color: "#e2e8f0" }}>{data.designation}</span> {data.party ? `(${data.party})` : ''}
-                  </p>
-                )}
-                {data.location && (
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>Elaka: {data.location}</p>
-                )}
+              {/* Title */}
+              <div className="mt-3 text-center">
+                <h3 className="text-sm font-bold text-amber-400 truncate">
+                  {titleText}
+                </h3>
               </div>
             </div>
 
@@ -221,9 +207,17 @@ export default function AllContent() {
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
                 onClick={() => handleDownload(item._id, titleText)}
-                className="flex-1 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
               >
-                <FiDownload /> Download HD
+                <FiDownload /> Download
+              </button>
+
+              <button
+                onClick={() => handleReuse(item.dataType, item._id)}
+                className="py-2 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                title="Reuse Design"
+              >
+                <FiRefreshCw /> Reuse
               </button>
 
               <button
