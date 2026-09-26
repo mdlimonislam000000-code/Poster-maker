@@ -21,18 +21,11 @@ export default function Templates() {
     const fetchUserPosters = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/posters`);
+        const response = await fetch(`http://localhost:5000/api/templates/user/${userId}`);
         const result = await response.json();
 
         if (result.success) {
-          // Ekhane filter kore shei poster gulo bad dewa hocche jader party te data ache.
-          // Mane shudhu taderi rakha hocche jader party faka (!data.party ba khali string).
-          const filteredPosters = result.data.filter((poster: any) => {
-            const data = poster.formData || poster;
-            return !data.party || data.party.trim() === "" || data.party === " ";
-          });
-
-          setPosters(filteredPosters);
+          setPosters(result.data);
         } else {
           setError(result.message || 'Failed to load templates');
         }
@@ -77,7 +70,7 @@ export default function Templates() {
 
     try {
       setDeletingId(posterId);
-      const response = await fetch(`http://localhost:5000/api/posters/${posterId}`, {
+      const response = await fetch(`http://localhost:5000/api/templates/${posterId}`, {
         method: "DELETE",
       });
       const result = await response.json();
@@ -122,14 +115,7 @@ export default function Templates() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {posters.map((poster) => {
-        const data = poster.formData || poster;
-        
-        const posterImage = 
-          poster.generatedImageUrl || 
-          poster.photos?.[0] || 
-          poster.photo || 
-          data.photos?.[0] || 
-          null;
+        const posterImage = poster.generatedImageUrl || null;
 
         return (
           <div key={poster._id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md flex flex-col justify-between">
@@ -146,7 +132,7 @@ export default function Templates() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <span style={{ fontSize: "10px", backgroundColor: "rgba(245, 158, 11, 0.1)", color: "#fbbf24", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", textTransform: "uppercase" }}>
-                  {data.occasionType || 'Template'}
+                  {poster.category || 'Template'}
                 </span>
                 <span style={{ fontSize: "10px", color: "#94a3b8" }}>
                   {poster.createdAt ? new Date(poster.createdAt).toLocaleDateString() : 'Tarikh nei'}
@@ -162,24 +148,24 @@ export default function Templates() {
                 )}
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top, rgba(2, 6, 23, 0.9), transparent)" }}>
                   <h3 style={{ fontSize: "12px", fontWeight: "bold", color: "#fde047", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    "{data.headlineText || 'Swagotam'}"
+                    "{poster.defaultHeadline || poster.title}"
                   </h3>
                 </div>
               </div>
 
               <div style={{ marginTop: "8px" }}>
-                <h4 style={{ fontSize: "12px", fontWeight: "bold", color: "#ffffff", margin: "0 0 4px 0" }}>Nam: {data.name}</h4>
+                <h4 style={{ fontSize: "12px", fontWeight: "bold", color: "#ffffff", margin: "0 0 4px 0" }}>Title: {poster.title}</h4>
                 <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 2px 0" }}>
-                  Podobi: <span style={{ color: "#e2e8f0" }}>{data.designation}</span>
+                  Headline: <span style={{ color: "#e2e8f0" }}>{poster.defaultHeadline}</span>
                 </p>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>Elaka: {data.location}</p>
+                <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>Description: {poster.defaultDesc || "N/A"}</p>
               </div>
             </div>
 
             {/* Action Buttons (Download & Delete) */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
-                onClick={() => handleDownload(poster._id, data.name)}
+                onClick={() => handleDownload(poster._id, poster.title)}
                 className="flex-1 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
               >
                 <FiDownload /> Download HD

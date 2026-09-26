@@ -7,7 +7,7 @@ import { authClient } from "@/lib/auth-client";
 
 export default function UniversalPosterMaker() {
   const [selectedCategory, setSelectedCategory] = useState("all");
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -24,7 +24,7 @@ export default function UniversalPosterMaker() {
   const [pendingTemplate, setPendingTemplate] = useState<any>(null);
   const posterRef = useRef<HTMLDivElement>(null);
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const user_Id = session?.user?.id;
 
   const [editableTexts, setEditableTexts] = useState({
@@ -90,8 +90,8 @@ export default function UniversalPosterMaker() {
     }
   ];
 
-  const filteredTemplates = selectedCategory === "all" 
-    ? templates 
+  const filteredTemplates = selectedCategory === "all"
+    ? templates
     : templates.filter(t => t.category === selectedCategory);
 
   const handleUseTemplateClick = (tpl: any) => {
@@ -105,7 +105,7 @@ export default function UniversalPosterMaker() {
     if (e.target.files && e.target.files[0] && pendingTemplate) {
       const file = e.target.files[0];
       const reader = new FileReader();
-      
+
       reader.onload = (uploadEvent) => {
         if (uploadEvent.target?.result) {
           setUserPhoto(uploadEvent.target.result as string);
@@ -123,7 +123,7 @@ export default function UniversalPosterMaker() {
           setSaveSuccess(false);
         }
       };
-      
+
       reader.readAsDataURL(file);
       e.target.value = "";
     }
@@ -154,32 +154,29 @@ export default function UniversalPosterMaker() {
     if (posterRef.current && activeTemplate) {
       try {
         setIsSaving(true);
-        const dataUrl = await htmlToImage.toPng(posterRef.current, { 
-          cacheBust: true, 
-          quality: 0.95 
+        const dataUrl = await htmlToImage.toPng(posterRef.current, {
+          cacheBust: true,
+          quality: 0.95
         });
 
-        const response = await fetch("http://localhost:5000/api/posters/save", {
+        const response = await fetch("http://localhost:5000/api/templates", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: user_Id,
-            templateId: activeTemplate.id,
-            templateName: activeTemplate.title, 
-            templateTitle: activeTemplate.title,
+            userId: user_Id ,
+            title: activeTemplate.title,
             category: activeTemplate.category,
+            defaultHeadline: editableTexts.headline,
+            defaultSubHeadline: editableTexts.subHeadline,
+            defaultDesc: editableTexts.description,
+            borderColor: activeTemplate.borderColor,
+            badgeBg: activeTemplate.badgeBg,
+            badgeText: activeTemplate.badgeText,
+            accentColor: activeTemplate.accentColor,
+            gradient: activeTemplate.gradient,
             generatedImageUrl: dataUrl,
-            formData: {
-              headlineText: editableTexts.headline,
-              subHeadline: editableTexts.subHeadline,
-              description: editableTexts.description,
-              name: editableTexts.name,
-              designation: editableTexts.designation,
-              occasionType: activeTemplate.title,
-            },
-            photos: userPhoto ? [userPhoto] : [],
           }),
         });
 
@@ -195,7 +192,7 @@ export default function UniversalPosterMaker() {
 
       } catch (err) {
         console.error("Poster save or download failed:", err);
-        alert("sorry, poster save or download is not downloaded.");
+        alert("Sorry, poster save or download failed.");
       } finally {
         setIsSaving(false);
       }
@@ -203,18 +200,16 @@ export default function UniversalPosterMaker() {
   };
 
   return (
-    // মূল ব্যাকগ্রাউন্ড এখানে bg-[#0b0f17] (হালকা কালো/ডিপ গ্রে) করে দেওয়া হয়েছে
     <div className="min-h-screen bg-[#0b0f17] text-white p-6 md:p-8">
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        accept="image/*" 
-        className="hidden" 
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
       />
 
       <div className="max-w-6xl mx-auto space-y-8">
-        
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-4 gap-4">
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
@@ -256,14 +251,14 @@ export default function UniversalPosterMaker() {
             >
               <div
                 className="w-full h-72 rounded-xl flex flex-col justify-between p-3 text-center relative overflow-hidden shadow-2xl bg-cover bg-center"
-                style={{ 
+                style={{
                   border: `2px solid ${tpl.borderColor}`,
-                  backgroundImage: `url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80')` 
+                  backgroundImage: `url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80')`
                 }}
               >
                 <div className="absolute inset-0" style={{ background: tpl.gradient }}></div>
                 <div className="relative z-10 space-y-1">
-                  <span 
+                  <span
                     className="inline-block font-black text-[9px] py-0.5 px-2.5 rounded-full shadow"
                     style={{ backgroundColor: tpl.badgeBg, color: tpl.badgeText }}
                   >
@@ -292,19 +287,17 @@ export default function UniversalPosterMaker() {
             </div>
           ))}
         </div>
-
       </div>
 
       {isModalOpen && activeTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-[#121824] border border-white/15 rounded-3xl max-w-5xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative">
-            
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
-                <h2 className="text-base font-bold text-white">picture zoom and customization</h2>
+                <h2 className="text-base font-bold text-white">Picture Zoom and Customization</h2>
                 <p className="text-xs text-slate-400">{activeTemplate.title} (Double click to zoom)</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-slate-400 hover:text-white bg-neutral-900 p-2.5 rounded-full cursor-pointer hover:bg-neutral-800 transition-colors"
               >
@@ -313,31 +306,30 @@ export default function UniversalPosterMaker() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
               <div className="space-y-5 bg-[#0b0f17] p-5 rounded-2xl border border-white/10">
                 <div className="space-y-2 border-b border-white/10 pb-4">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <FiZoomIn size={14} /> Picture zoom & position
+                      <FiZoomIn size={14} /> Picture Zoom & Position
                     </label>
-                    <button 
+                    <button
                       onClick={() => { setZoomLevel(1); setImagePosition({ x: 0, y: 0 }); }}
                       className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
                     >
                       <FiRefreshCw size={10} /> Reset
                     </button>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 pt-1">
                     <FiZoomOut className="text-slate-400" size={14} />
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="2.5" 
-                      step="0.05" 
-                      value={zoomLevel} 
+                    <input
+                      type="range"
+                      min="1"
+                      max="2.5"
+                      step="0.05"
+                      value={zoomLevel}
                       onChange={(e) => setZoomLevel(parseFloat(e.target.value))}
-                      className="w-full accent-amber-400 cursor-pointer" 
+                      className="w-full accent-amber-400 cursor-pointer"
                     />
                     <FiZoomIn className="text-slate-400" size={14} />
                   </div>
@@ -346,54 +338,54 @@ export default function UniversalPosterMaker() {
 
                 <div className="space-y-3">
                   <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">Customize Poster Text</label>
-                  
+
                   <div>
                     <label className="text-[10px] text-slate-400 block mb-1">Main Headline</label>
-                    <input 
-                      type="text" 
-                      value={editableTexts.headline} 
-                      onChange={(e) => handleTextChange(e, 'headline')} 
-                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs font-bold focus:border-amber-400 outline-none" 
+                    <input
+                      type="text"
+                      value={editableTexts.headline}
+                      onChange={(e) => handleTextChange(e, 'headline')}
+                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs font-bold focus:border-amber-400 outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="text-[10px] text-slate-400 block mb-1">Sub heading</label>
-                    <input 
-                      type="text" 
-                      value={editableTexts.subHeadline} 
-                      onChange={(e) => handleTextChange(e, 'subHeadline')} 
-                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-slate-200 text-xs focus:border-amber-400 outline-none" 
+                    <input
+                      type="text"
+                      value={editableTexts.subHeadline}
+                      onChange={(e) => handleTextChange(e, 'subHeadline')}
+                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-slate-200 text-xs focus:border-amber-400 outline-none"
                     />
                   </div>
 
-                   <div>
+                  <div>
                     <label className="text-[10px] text-slate-400 block mb-1">Main Description</label>
-                    <textarea 
-                      value={editableTexts.description} 
-                      onChange={(e) => handleTextChange(e, 'description')} 
-                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-slate-300 text-xs resize-none focus:border-amber-400 outline-none" 
-                      rows={3} 
+                    <textarea
+                      value={editableTexts.description}
+                      onChange={(e) => handleTextChange(e, 'description')}
+                      className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-slate-300 text-xs resize-none focus:border-amber-400 outline-none"
+                      rows={3}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 gap-2.5">
                     <div>
                       <label className="text-[10px] text-slate-400 block mb-1">Your Name</label>
-                      <input 
-                        type="text" 
-                        value={editableTexts.name} 
-                        onChange={(e) => handleTextChange(e, 'name')} 
-                        className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs font-bold focus:border-amber-400 outline-none" 
+                      <input
+                        type="text"
+                        value={editableTexts.name}
+                        onChange={(e) => handleTextChange(e, 'name')}
+                        className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs font-bold focus:border-amber-400 outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-[10px] text-slate-400 block mb-1">Designation & Identity</label>
-                      <textarea 
-                        value={editableTexts.designation} 
-                        onChange={(e) => handleTextChange(e, 'designation')} 
-                        className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-amber-300 text-xs resize-none focus:border-amber-400 outline-none" 
-                        rows={2} 
+                      <textarea
+                        value={editableTexts.designation}
+                        onChange={(e) => handleTextChange(e, 'designation')}
+                        className="w-full p-2.5 rounded-lg bg-neutral-900 border border-white/10 text-amber-300 text-xs resize-none focus:border-amber-400 outline-none"
+                        rows={2}
                       />
                     </div>
                   </div>
@@ -404,8 +396,8 @@ export default function UniversalPosterMaker() {
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1">
                   <FiMaximize2 size={12} /> Live Preview
                 </span>
-   
-                <div 
+
+                <div
                   ref={posterRef}
                   id="poster-box"
                   onMouseDown={handleMouseDown}
@@ -418,13 +410,13 @@ export default function UniversalPosterMaker() {
                 >
                   {userPhoto && (
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      <img 
-                        src={userPhoto} 
-                        alt="User" 
+                      <img
+                        src={userPhoto}
+                        alt="User"
                         crossOrigin="anonymous"
                         className="w-full h-full object-cover absolute inset-0 transition-transform duration-75"
-                        style={{ 
-                          transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)` 
+                        style={{
+                          transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`
                         }}
                       />
                     </div>
@@ -433,11 +425,11 @@ export default function UniversalPosterMaker() {
                   <div className="absolute inset-0 pointer-events-none" style={{ background: activeTemplate.gradient }}></div>
 
                   <div className="relative z-10 space-y-2 mt-2 pointer-events-none">
-                    <span 
+                    <span
                       className="inline-block font-black text-sm py-1 px-3 rounded-full shadow-lg"
                       style={{ backgroundColor: activeTemplate.badgeBg, color: activeTemplate.badgeText }}
                     >
-                       {editableTexts.headline}
+                      {editableTexts.headline}
                     </span>
                     <p className="text-xs font-bold px-2 leading-snug" style={{ color: activeTemplate.accentColor }}>
                       {editableTexts.subHeadline}
@@ -462,47 +454,45 @@ export default function UniversalPosterMaker() {
                     disabled={isSaving}
                     className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer disabled:opacity-50"
                   >
-                    <FiDownload size={16} /> {isSaving ? "Saving Your Photo" : "Save and Download Poster"}
+                    <FiDownload size={16} /> {isSaving ? "Saving Your Photo..." : "Save and Download Poster"}
                   </button>
 
                   {saveSuccess && (
                     <p className="text-[11px] text-emerald-400 text-center flex items-center justify-center gap-1 font-semibold">
-                      <FiCheck size={14} /> Successfully saved 
+                      <FiCheck size={14} /> Successfully saved
                     </p>
                   )}
                 </div>
               </div>
-
             </div>
-
           </div>
         </div>
       )}
 
       {isFullscreen && activeTemplate && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-lg p-4">
-          <button 
+          <button
             onClick={() => setIsFullscreen(false)}
             className="absolute top-6 right-6 text-white bg-neutral-900 hover:bg-neutral-800 p-3 rounded-full cursor-pointer shadow-xl transition-colors"
           >
-            <FiX size= {22} />
+            <FiX size={22} />
           </button>
 
-          <p className="text-xs text-amber-400 mb-4 font-semibold">Live preview</p>
+          <p className="text-xs text-amber-400 mb-4 font-semibold">Live Preview</p>
 
-          <div 
+          <div
             className="w-[360px] h-[540px] md:w-[420px] md:h-[630px] rounded-3xl flex flex-col justify-between p-6 text-center relative overflow-hidden shadow-2xl bg-black"
             style={{ border: `2px solid ${activeTemplate.borderColor}` }}
           >
             {userPhoto && (
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <img 
-                  src={userPhoto} 
-                  alt="User Full" 
+                <img
+                  src={userPhoto}
+                  alt="User Full"
                   crossOrigin="anonymous"
                   className="w-full h-full object-cover absolute inset-0"
-                  style={{ 
-                    transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)` 
+                  style={{
+                    transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`
                   }}
                 />
               </div>
@@ -511,11 +501,11 @@ export default function UniversalPosterMaker() {
             <div className="absolute inset-0 pointer-events-none" style={{ background: activeTemplate.gradient }}></div>
 
             <div className="relative z-10 space-y-3 mt-2">
-              <span 
+              <span
                 className="inline-block font-black text-base py-1.5 px-5 rounded-full shadow-lg"
                 style={{ backgroundColor: activeTemplate.badgeBg, color: activeTemplate.badgeText }}
               >
-                 {editableTexts.headline}
+                {editableTexts.headline}
               </span>
               <p className="text-sm font-bold px-2 leading-snug" style={{ color: activeTemplate.accentColor }}>
                 {editableTexts.subHeadline}
@@ -535,7 +525,6 @@ export default function UniversalPosterMaker() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
