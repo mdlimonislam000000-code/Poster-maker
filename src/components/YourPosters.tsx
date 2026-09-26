@@ -1,7 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { FiDownload, FiLoader, FiTrash2 } from 'react-icons/fi';
-import html2canvas from 'html2canvas';
 import { authClient } from "@/lib/auth-client";
 
 export default function YourPosters() {
@@ -13,8 +12,6 @@ export default function YourPosters() {
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const posterRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
   useEffect(() => {
     if (!userId) return;
 
@@ -25,8 +22,6 @@ export default function YourPosters() {
         const result = await response.json();
 
         if (result.success) {
-          // ইমপোর্ট করার সময় বা ডেটা সেট করার সময় ফিল্টার করে নেব
-          // যাতে শুধুমাত্র সেই পোস্টারগুলোই থাকে যেগুলোর party-তে ডেটা আছে
           const validPosters = result.data.filter((poster: any) => {
             const data = poster.formData || poster;
             return data.party && data.party.trim() !== "" && data.party !== " ";
@@ -47,28 +42,31 @@ export default function YourPosters() {
     fetchUserPosters();
   }, [userId]);
 
-  const handleDownload = async (posterId: string, posterName: string) => {
-    const element = posterRefs.current[posterId];
-    if (!element) return;
+  const handleDownload = async (itemImage: string, itemName: string) => {
+    if (!itemImage) {
+      alert("Download korar moto kono chobi nei.");
+      return;
+    }
 
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#0f172a",
-      });
-
-      const image = canvas.toDataURL("image/png");
+      const response = await fetch(itemImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
       const link = document.createElement("a");
-      link.href = image;
-      link.download = `${posterName || 'poster'}-design.png`;
+      link.href = url;
+      link.download = `${itemName || 'poster'}-design.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download failed:", err);
-      alert("Poster download korte somossa hoyeche.");
+      const link = document.createElement("a");
+      link.href = itemImage;
+      link.target = "_blank";
+      link.download = `${itemName || 'poster'}-design.png`;
+      link.click();
     }
   };
 
@@ -114,7 +112,7 @@ export default function YourPosters() {
   if (posters.length === 0) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs space-y-2">
-        <p>Party-সহ কোনো পোস্টার পাওয়া যায়নি।</p>
+        <p>Party-সহ কোনো পোস্টার পাওয়া যায়নি।</p>
       </div>
     );
   }
@@ -131,11 +129,12 @@ export default function YourPosters() {
           data.photos?.[0] || 
           null;
 
+        const titleText = data.headlineText || data.name || 'Poster Design';
+
         return (
           <div key={poster._id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md flex flex-col justify-between">
             
             <div 
-              ref={(el) => { posterRefs.current[poster._id] = el; }}
               style={{ 
                 backgroundColor: "#0f172a", 
                 color: "#ffffff", 
@@ -153,34 +152,27 @@ export default function YourPosters() {
                 </span>
               </div>
 
-              {/* Poster Image Box */}
-              <div style={{ width: "100%", height: "140px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px" }}>
+              {/* Poster Image Box - height 380px and objectFit contain */}
+              <div style={{ width: "100%", height: "380px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {posterImage ? (
-                  <img src={posterImage} alt="Poster Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
+                  <img src={posterImage} alt="Poster Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} crossOrigin="anonymous" />
                 ) : (
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Kono chobi dewa hoyni</div>
+                  <div style={{ fontSize: "11px", color: "#64748b" }}>Kono chobi dewa hoyni</div>
                 )}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top, rgba(2, 6, 23, 0.9), transparent)" }}>
-                  <h3 style={{ fontSize: "12px", fontWeight: "bold", color: "#fde047", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    "{data.headlineText || 'Swagotam'}"
-                  </h3>
-                </div>
               </div>
 
-              <div style={{ marginTop: "8px" }}>
-                <h4 style={{ fontSize: "12px", fontWeight: "bold", color: "#ffffff", margin: "0 0 4px 0" }}>Nam: {data.name}</h4>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 2px 0" }}>
-                  Podobi: <span style={{ color: "#e2e8f0" }}>{data.designation}</span>
-                  {data.party && ` (${data.party})`}
-                </p>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>Elaka: {data.location}</p>
+              {/* Title */}
+              <div className="mt-3 text-center">
+                <h3 className="text-sm font-bold text-amber-400 truncate">
+                  {titleText}
+                </h3>
               </div>
             </div>
 
-            {/* Action Buttons (Download & Delete) */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
-                onClick={() => handleDownload(poster._id, data.name)}
+                onClick={() => handleDownload(posterImage, data.name)}
                 className="flex-1 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
               >
                 <FiDownload /> Download HD

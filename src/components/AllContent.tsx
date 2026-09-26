@@ -1,8 +1,7 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { FiDownload, FiLoader, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import html2canvas from 'html2canvas';
 import { authClient } from "@/lib/auth-client";
 
 export default function AllContent() {
@@ -14,8 +13,6 @@ export default function AllContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     if (!userId) return;
@@ -67,28 +64,31 @@ export default function AllContent() {
     fetchAllData();
   }, [userId]);
 
-  const handleDownload = async (itemId: string, itemName: string) => {
-    const element = itemRefs.current[itemId];
-    if (!element) return;
+  const handleDownload = async (itemImage: string, itemName: string) => {
+    if (!itemImage) {
+      alert("Download korar moto kono chobi nei.");
+      return;
+    }
 
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#0f172a",
-      });
-
-      const image = canvas.toDataURL("image/png");
+      const response = await fetch(itemImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
       const link = document.createElement("a");
-      link.href = image;
+      link.href = url;
       link.download = `${itemName || 'design'}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download failed:", err);
-      alert("Download korte somossa hoyeche.");
+      const link = document.createElement("a");
+      link.href = itemImage;
+      link.target = "_blank";
+      link.download = `${itemName || 'design'}.png`;
+      link.click();
     }
   };
 
@@ -160,7 +160,6 @@ export default function AllContent() {
       {items.map((item) => {
         const data = item.formData || item;
         const itemImage = item.generatedImageUrl;
-
         const titleText = item.title || data.headlineText || data.name || 'Design Title';
         const isTemplate = item.dataType === 'template';
 
@@ -168,7 +167,6 @@ export default function AllContent() {
           <div key={item._id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md flex flex-col justify-between">
             
             <div 
-              ref={(el) => { itemRefs.current[item._id] = el; }}
               style={{ 
                 backgroundColor: "#0f172a", 
                 color: "#ffffff", 
@@ -186,7 +184,7 @@ export default function AllContent() {
                 </span>
               </div>
 
-              {/* Poster Box - height বাড়িয়ে দিয়ে full দেখানোর ব্যবস্থা করা হয়েছে */}
+              {/* Poster Box */}
               <div style={{ width: "100%", height: "380px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {itemImage ? (
                   <img src={itemImage} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} crossOrigin="anonymous" />
@@ -206,7 +204,7 @@ export default function AllContent() {
             {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
-                onClick={() => handleDownload(item._id, titleText)}
+                onClick={() => handleDownload(itemImage, titleText)}
                 className="flex-1 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
               >
                 <FiDownload /> Download
