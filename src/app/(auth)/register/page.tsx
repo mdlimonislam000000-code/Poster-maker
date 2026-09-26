@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { authClient } from "@/lib/auth-client"; // authClient import করা হয়েছে
+import { authClient } from "@/lib/auth-client";
 import {
   FiUser,
   FiMail,
@@ -14,6 +14,7 @@ import {
   FiEyeOff,
   FiCheck,
   FiStar,
+  FiUpload,
 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 
@@ -21,11 +22,13 @@ type RegisterFormData = {
   name: string;
   emailOrPhone: string;
   password: string;
+  image?: FileList;
 };
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const router = useRouter();
 
   const {
@@ -36,15 +39,31 @@ export default function RegisterPage() {
     mode: "onBlur",
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setErrorMessage(null);
 
-      // authClient ব্যবহার করে সাইন আপ করা হচ্ছে
+      let imageUrl: string | undefined = undefined;
+      if (imagePreview) {
+        imageUrl = imagePreview; 
+      }
+
       const { error } = await authClient.signUp.email({
         email: data.emailOrPhone,
         password: data.password,
         name: data.name,
+        image: imageUrl,
         callbackURL: "/",
       });
 
@@ -59,7 +78,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Google OAuth Login Handler
   const handleGoogleLogin = async () => {
     try {
       setErrorMessage(null);
@@ -69,7 +87,7 @@ export default function RegisterPage() {
       });
     } catch (error) {
       console.error("Google login failed:", error);
-      setErrorMessage("গুগল লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      setErrorMessage("গুগল লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
     }
   };
 
@@ -179,6 +197,33 @@ export default function RegisterPage() {
               noValidate
               className="space-y-4"
             >
+              <div className="flex flex-col items-center mb-4">
+                <label htmlFor="profile-image" className="cursor-pointer group relative">
+                  <div className="w-20 h-20 rounded-full border-2 border-dashed border-amber-400/40 bg-[#eaf1fc]/10 flex items-center justify-center overflow-hidden hover:border-amber-400 transition-all">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Profile Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center text-slate-400 group-hover:text-amber-400 transition-colors">
+                        <FiUpload className="text-xl mb-1" />
+                        <span className="text-[10px]">Upload Photo</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    id="profile-image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    {...register("image")}
+                    onChange={(e) => {
+                      register("image").onChange(e);
+                      handleImageChange(e);
+                    }}
+                  />
+                </label>
+                <span className="text-xs text-slate-400 mt-2">Profile Picture (Optional)</span>
+              </div>
+
               <div>
                 <label
                   htmlFor="name"

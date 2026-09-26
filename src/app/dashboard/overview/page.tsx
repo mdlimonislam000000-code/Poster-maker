@@ -20,7 +20,6 @@ export default function DashboardOverview() {
       try {
         setLoading(true);
 
-        // একসাথে posters এবং templates দুই জায়গা থেকেই ডাটা ফেচ করা হচ্ছে
         const [postersRes, templatesRes] = await Promise.all([
           fetch(`http://localhost:5000/api/users/${userId}/posters`),
           fetch(`http://localhost:5000/api/templates/user/${userId}`)
@@ -46,12 +45,10 @@ export default function DashboardOverview() {
     fetchDashboardData();
   }, [userId]);
 
-  // মোট টেমপ্লেট এবং পোস্টার সংখ্যা আলাদাভাবে হিসাব করা
   const totalTemplates = templates.length;
   const totalPosters = posters.length;
   const combinedTotal = totalTemplates + totalPosters;
 
-  // সাম্প্রতিক ডিজাইনসমূহ দেখানোর জন্য (পোস্টার এবং টেমপ্লেট একসাথে মিলিয়ে লেটেস্ট ৩টি)
   const combinedItems = [
     ...posters.map(p => ({ ...p, dataType: 'poster' })),
     ...templates.map(t => ({ ...t, dataType: 'template' }))
@@ -61,25 +58,23 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-8">
-      {/* ওয়েলকাম ব্যানার */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white mb-2">
-            স্বাগতম, <span className="text-amber-400">{userName}</span>! 👋
+            Welcome, <span className="text-amber-400">{userName}</span>! 👋
           </h1>
           <p className="text-xs md:text-sm text-slate-400">
-            আপনার রাজনৈতিক পোস্টার ও টেমপ্লেট ডিজাইনগুলো এক নজরে দেখতে এবং নতুন ডিজাইন তৈরি করতে ড্যাশবোর্ড ব্যবহার করুন।
+            View your political posters and templates at a glance, and create new designs using the dashboard.
           </p>
         </div>
         <Link
           href="create-poster"
           className="px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 transition shadow-md cursor-pointer"
         >
-          <FiPlusCircle className="text-base" /> নতুন পোস্টার তৈরি করুন
+          <FiPlusCircle className="text-base" />Make a New Poster 
         </Link>
       </div>
 
-      {/* স্ট্যাটিস্টিক্স কার্ডসমূহ (Template, Create Poster এবং মোট সংখ্যা) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center text-xl font-bold">
@@ -87,7 +82,7 @@ export default function DashboardOverview() {
           </div>
           <div>
             <p className="text-xs text-slate-400">Template</p>
-            <h3 className="text-xl font-bold text-white">{loading ? '...' : totalTemplates} টি</h3>
+            <h3 className="text-xl font-bold text-white">{loading ? '...' : totalTemplates} </h3>
           </div>
         </div>
 
@@ -97,7 +92,7 @@ export default function DashboardOverview() {
           </div>
           <div>
             <p className="text-xs text-slate-400">Create Poster</p>
-            <h3 className="text-xl font-bold text-white">{loading ? '...' : totalPosters} টি</h3>
+            <h3 className="text-xl font-bold text-white">{loading ? '...' : totalPosters} </h3>
           </div>
         </div>
 
@@ -106,30 +101,29 @@ export default function DashboardOverview() {
             <FiImage />
           </div>
           <div>
-            <p className="text-xs text-slate-400">মোট সংরক্ষিত ডিজাইন</p>
-            <h3 className="text-xl font-bold text-white">{loading ? '...' : combinedTotal} টি</h3>
+            <p className="text-xs text-slate-400">Total Saved Designs</p>
+            <h3 className="text-xl font-bold text-white">{loading ? '...' : combinedTotal} </h3>
           </div>
         </div>
       </div>
 
-      {/* সাম্প্রতিক ডিজাইন সেকশন */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">সাম্প্রতিক ডিজাইনসমূহ</h2>
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Recent Designs</h2>
           <Link 
             href="/dashboard/my-poster" 
             className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-medium transition"
           >
-            সব দেখুন <FiArrowRight />
+            View All <FiArrowRight />
           </Link>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-xs text-slate-400">লোড হচ্ছে...</div>
+          <div className="text-center py-8 text-xs text-slate-400">Loading...</div>
         ):(
           recentItems.length === 0 ? (
             <div className="text-center py-10 text-slate-500 text-xs">
-              এখনো কোনো টেমপ্লেট বা পোস্টার তৈরি করা হয়নি। নতুন একটি তৈরি করে শুরু করুন!
+              You haven't created any templates or posters yet. Start by creating a new design!
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -154,16 +148,16 @@ export default function DashboardOverview() {
                       {itemImage ? (
                         <img src={itemImage} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[10px] text-slate-600">ছবি নেই</span>
+                        <span className="text-[10px] text-slate-600">No Image Available</span>
                       )}
                     </div>
 
                     <div>
                       <h4 className="text-xs font-bold text-white truncate">
-                        {data.name ? `নাম: ${data.name}` : `Title: ${titleText}`}
+                        {data.name ? `Name: ${data.name}` : `Title: ${titleText}`}
                       </h4>
                       <p className="text-[11px] text-slate-400 truncate">
-                        {data.designation ? `পদবি: ${data.designation}` : (item.category ? `ক্যাটাগরি: ${item.category}` : '')}
+                        {data.designation ? `Designation: ${data.designation}` : (item.category ? `Category: ${item.category}` : '')}
                       </p>
                     </div>
                   </div>

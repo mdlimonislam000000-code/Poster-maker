@@ -24,4 +24,18 @@ export const auth = betterAuth({
       trustedProviders: ["google"],
     },
   },
+  user: {
+    additionalFields: {
+      district: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
+      party: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
+    },
+  },
 });

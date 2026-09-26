@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from "@/lib/auth-client";
-import { FiMenu, FiX, FiUser, FiHome, FiImage, FiPlusCircle, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiX, FiUser, FiHome, FiImage, FiPlusCircle, FiSettings, FiLogOut, FiLogIn } from 'react-icons/fi';
 
 const navItems = [
   { name: 'Home', path: '/', icon: FiImage },
@@ -21,11 +21,11 @@ const Navbar = () => {
   // Fetching dynamic user session using BetterAuth
   const { data: session, isPending } = authClient.useSession();
 
-  const user = {
-    name: session?.user?.name || "User",
-    email: session?.user?.email || "",
-    avatar: session?.user?.image || null,
-  };
+  const user = session?.user ? {
+    name: session.user.name || "User",
+    email: session.user.email || "",
+    avatar: (session.user as any).image || null,
+  } : null;
 
   const isActive = (path: string) => pathname === path;
 
@@ -78,32 +78,45 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* Desktop Profile Section */}
+          {/* Desktop Profile / Login Section */}
           <div className="hidden md:flex items-center ml-4 border-l border-slate-800 pl-4 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-semibold text-white">
-                  {isPending ? "Loading..." : user.name}
-                </p>
-                <p className="text-xs text-amber-400">Developer</p>
-              </div>
-              {user.avatar ? (
-                <img className="h-10 w-10 rounded-full border-2 border-amber-500 object-cover" src={user.avatar} alt="User" />
-              ) : (
-                <div className="h-10 w-10 rounded-full bg-slate-800 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 font-semibold">
-                  <FiUser className="h-5 w-5" />
+            {isPending ? (
+              <div className="text-xs text-slate-400">Loading...</div>
+            ) : user ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-white">{user.name}</p>
+                    <p className="text-xs text-amber-400">Developer</p>
+                  </div>
+                  {user.avatar ? (
+                    <img className="h-10 w-10 rounded-full border-2 border-amber-500 object-cover" src={user.avatar} alt="User" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-slate-800 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 font-semibold">
+                      <FiUser className="h-5 w-5" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Logout Button */}
-            <button
-              onClick={handleSignOut}
-              title="Logout"
-              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
-            >
-              <FiLogOut className="h-5 w-5" />
-            </button>
+                {/* Logout Button */}
+                <button
+                  onClick={handleSignOut}
+                  title="Logout"
+                  className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                >
+                  <FiLogOut className="h-5 w-5" />
+                </button>
+              </>
+            ) : (
+              /* Login Button if not logged in */
+              <Link
+                href="/login"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-400/10"
+              >
+                <FiLogIn className="h-4 w-4" />
+                লগইন
+              </Link>
+            )}
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -141,23 +154,40 @@ const Navbar = () => {
           })}
           
           <div className="pt-4 mt-2 border-t border-slate-800 flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-slate-800 border-2 border-amber-500/50 flex items-center justify-center text-amber-400">
-                <FiUser className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-white">{user.name}</div>
-                <div className="text-xs text-amber-400">Developer</div>
-              </div>
-            </div>
+            {user ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-slate-800 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 overflow-hidden">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
+                    ) : (
+                      <FiUser className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{user.name}</div>
+                    <div className="text-xs text-amber-400">Developer</div>
+                  </div>
+                </div>
 
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-            >
-              <FiLogOut className="h-4 w-4" />
-              Logout
-            </button>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                >
+                  <FiLogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs"
+              >
+                <FiLogIn className="h-4 w-4" />
+                লগইন করুন
+              </Link>
+            )}
           </div>
         </div>
       )}
