@@ -67,13 +67,19 @@ export default function CreatePosterPage({}: CreatePosterPageProps) {
     }
   };
 
+   const {data:tokenData} = authClient.useSession();
+      console.log(tokenData);
+      
+
   const savePosterToDatabase = async (posterPayload: any, posterNumber: number) => {
     try {
+     
       setSavingId(posterNumber);
       const response = await fetch("http://localhost:5000/api/posters/save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenData?.session?.token}`
         },
         body: JSON.stringify(posterPayload),
       });

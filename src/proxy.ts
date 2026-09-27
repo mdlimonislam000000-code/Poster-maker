@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-
-  const sessionCookie = request.cookies.get('better-auth.session_token') || request.cookies.get('__Secure-better-auth.session_token');
+export function proxy(request: NextRequest) {
+  const sessionCookie = 
+    request.cookies.get('better-auth.session_token') || 
+    request.cookies.get('__Secure-better-auth.session_token') ||
+    request.cookies.get('better-auth.session');
 
   const { pathname } = request.nextUrl;
   const protectedPaths = ['/create-poster', '/dashboard', '/templates'];
@@ -19,5 +21,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/create-poster/:path*', '/dashboard/:path*', '/templates'],
+  matcher: ['/create-poster/:path*', '/dashboard/:path*', '/templates/:path*'],
 };
