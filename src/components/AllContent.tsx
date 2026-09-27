@@ -100,10 +100,11 @@ export default function AllContent() {
     }
   };
 
+
   const handleDelete = async (itemId: string, dataType: string) => {
     const confirmMsg = dataType === 'poster' 
-      ? "Apni ki nischot je ei poster-ti delete korte chan?" 
-      : "Apni ki nischot je ei template-ti delete korte chan?";
+      ? "Are you sure you want to delete this poster?" 
+      : "Are you sure you want to delete this template?";
 
     if (!confirm(confirmMsg)) return;
 
@@ -114,7 +115,7 @@ export default function AllContent() {
         : `http://localhost:5000/api/templates/${itemId}`;
 
       const response = await fetch(endpoint, {
-        method: "DELETE",
+        method: "DELETE"
       });
       const result = await response.json();
 

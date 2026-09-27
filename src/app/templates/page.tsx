@@ -149,6 +149,8 @@ export default function UniversalPosterMaker() {
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+    const {data:tokenData} = authClient.useSession();
+        console.log(tokenData);
 
   const handleDownloadAndSave = async () => {
     if (posterRef.current && activeTemplate) {
@@ -163,6 +165,7 @@ export default function UniversalPosterMaker() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+           "Authorization": `Bearer ${tokenData?.session?.token}`
           },
           body: JSON.stringify({
             userId: user_Id ,

@@ -12,13 +12,20 @@ export default function Templates() {
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+      const {data:tokenData} = authClient.useSession();
+          console.log(tokenData);
+          
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserPosters = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/templates/user/${userId}`);
+        const response = await fetch(`http://localhost:5000/api/templates/user/${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${session?.session?.token}`
+          }
+        });
         const result = await response.json();
 
         if (result.success) {
@@ -66,7 +73,7 @@ export default function Templates() {
   };
 
   const handleDelete = async (posterId: string) => {
-    if (!confirm("Apni ki nischot je ei template-ti delete korte chan?")) return;
+    if (!confirm("Are you sure you want to delete this template?")) return;
 
     try {
       setDeletingId(posterId);
@@ -78,7 +85,7 @@ export default function Templates() {
       if (result.success) {
         setPosters((prev) => prev.filter((p) => p._id !== posterId));
       } else {
-        alert(result.message || "Template delete korte somossa hoyeche.");
+        alert(result.message || "Somethinmg went wrong while deleting the template.");
       }
     } catch (err) {
       console.error("Delete failed:", err);

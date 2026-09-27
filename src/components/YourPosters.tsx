@@ -12,13 +12,19 @@ export default function YourPosters() {
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const {data:tokenData} = authClient.useSession();
+  console.log(tokenData);
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserPosters = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/posters`);
+        const response = await fetch(`http://localhost:5000/api/users/${userId}/posters`,{
+           headers: {
+            "Authorization": `Bearer ${session?.session?.token}`
+          }
+        });
         const result = await response.json();
 
         if (result.success) {
@@ -72,11 +78,15 @@ export default function YourPosters() {
 
   const handleDelete = async (posterId: string) => {
     if (!confirm("Apni ki nischot je ei poster-ti delete korte chan?")) return;
-
+      const {data:tokenData} = authClient.useSession();
+          console.log(tokenData);
     try {
       setDeletingId(posterId);
       const response = await fetch(`http://localhost:5000/api/posters/${posterId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session?.session?.token}`
+        }
       });
       const result = await response.json();
 
