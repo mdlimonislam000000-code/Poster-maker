@@ -8,7 +8,7 @@ interface CreatePosterPageProps {
   userId?: string; 
 }
 
-export default function CreatePosterPage({}: CreatePosterPageProps) {
+export default  function CreatePosterPage({}: CreatePosterPageProps) {
   const { data: session } = authClient.useSession();
   const user_Id = session?.user?.id || "user_limon_mia";
 
@@ -67,15 +67,15 @@ export default function CreatePosterPage({}: CreatePosterPageProps) {
     }
   };
 
-   const {data:tokenData} = authClient.useSession();
-      console.log(tokenData);
+   const {data:tokenData} =  authClient.useSession();
+      console.log('hello:',tokenData);
       
 
   const savePosterToDatabase = async (posterPayload: any, posterNumber: number) => {
     try {
      
       setSavingId(posterNumber);
-      const response = await fetch("http://localhost:5000/api/posters/save", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/posters/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -6,24 +6,26 @@ import { authClient } from "@/lib/auth-client";
 export default function Templates() {
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
+  // সেশন থেকে সরাসরি টোকেনটি নিয়ে নেওয়া হলো (যদি ব্যাকএন্ডে টোকেন প্রয়োজন হয়)
+  const token = (session as any)?.session?.token;
 
   const [posters, setPosters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-      const {data:tokenData} = authClient.useSession();
-          console.log(tokenData);
-          
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserPosters = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/templates/user/${userId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/templates/user/${userId}`, {
+          method: "GET",
+          credentials: "include", // কুকি বা সেশন অটোমেটিক পাঠানোর জন্য
           headers: {
-            "Authorization": `Bearer ${session?.session?.token}`
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
           }
         });
         const result = await response.json();
@@ -35,14 +37,14 @@ export default function Templates() {
         }
       } catch (err) {
         console.error("Error fetching templates:", err);
-        setError('Server connection stapon kora sombhob hoyni.');
+        setError('Server connection establish kora sombhob hoyni.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserPosters();
-  }, [userId]);
+  }, [userId, token]);
 
   const handleDownload = async (itemImage: string, itemName: string) => {
     if (!itemImage) {
@@ -77,15 +79,19 @@ export default function Templates() {
 
     try {
       setDeletingId(posterId);
-      const response = await fetch(`http://localhost:5000/api/templates/${posterId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/templates/${posterId}`, {
         method: "DELETE",
+        credentials: "include",
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
       });
       const result = await response.json();
 
       if (result.success) {
         setPosters((prev) => prev.filter((p) => p._id !== posterId));
       } else {
-        alert(result.message || "Somethinmg went wrong while deleting the template.");
+        alert(result.message || "Something went wrong while deleting the template.");
       }
     } catch (err) {
       console.error("Delete failed:", err);
@@ -146,7 +152,6 @@ export default function Templates() {
                 </span>
               </div>
 
-              {/* Template Image Box - height 380px and objectFit contain */}
               <div style={{ width: "100%", height: "380px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {posterImage ? (
                   <img src={posterImage} alt="Template Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} crossOrigin="anonymous" />
@@ -155,7 +160,6 @@ export default function Templates() {
                 )}
               </div>
 
-              {/* Title */}
               <div className="mt-3 text-center">
                 <h3 className="text-sm font-bold text-amber-400 truncate">
                   {titleText}
@@ -163,7 +167,6 @@ export default function Templates() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
                 onClick={() => handleDownload(posterImage, poster.title)}

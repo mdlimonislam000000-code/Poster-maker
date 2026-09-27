@@ -21,8 +21,8 @@ export default function DashboardOverview() {
         setLoading(true);
 
         const [postersRes, templatesRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/users/${userId}/posters`),
-          fetch(`http://localhost:5000/api/templates/user/${userId}`)
+          fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/users/${userId}/posters`),
+          fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/templates/user/${userId}`)
         ]);
 
         const postersResult = await postersRes.json();

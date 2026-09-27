@@ -6,23 +6,24 @@ import { authClient } from "@/lib/auth-client";
 export default function YourPosters() {
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
+  const token = (session as any)?.session?.token;
 
   const [posters, setPosters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const {data:tokenData} = authClient.useSession();
-  console.log(tokenData);
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserPosters = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/posters`,{
-           headers: {
-            "Authorization": `Bearer ${session?.session?.token}`
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/users/${userId}/posters`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token || ""}`
           }
         });
         const result = await response.json();
@@ -46,7 +47,7 @@ export default function YourPosters() {
     };
 
     fetchUserPosters();
-  }, [userId]);
+  }, [userId, token]);
 
   const handleDownload = async (itemImage: string, itemName: string) => {
     if (!itemImage) {
@@ -78,14 +79,14 @@ export default function YourPosters() {
 
   const handleDelete = async (posterId: string) => {
     if (!confirm("Apni ki nischot je ei poster-ti delete korte chan?")) return;
-      const {data:tokenData} = authClient.useSession();
-          console.log(tokenData);
+
     try {
       setDeletingId(posterId);
-      const response = await fetch(`http://localhost:5000/api/posters/${posterId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/posters/${posterId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${session?.session?.token}`
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token || ""}`
         }
       });
       const result = await response.json();
@@ -162,7 +163,6 @@ export default function YourPosters() {
                 </span>
               </div>
 
-              {/* Poster Image Box - height 380px and objectFit contain */}
               <div style={{ width: "100%", height: "380px", backgroundColor: "#020617", borderRadius: "8px", overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {posterImage ? (
                   <img src={posterImage} alt="Poster Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} crossOrigin="anonymous" />
@@ -171,7 +171,6 @@ export default function YourPosters() {
                 )}
               </div>
 
-              {/* Title */}
               <div className="mt-3 text-center">
                 <h3 className="text-sm font-bold text-amber-400 truncate">
                   {titleText}
@@ -179,7 +178,6 @@ export default function YourPosters() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
               <button
                 onClick={() => handleDownload(posterImage, data.name)}

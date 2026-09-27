@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { MongoClient } from "mongodb";
 import { jwt } from "better-auth/plugins";
+import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI as string;
 const client = new MongoClient(uri);
@@ -25,6 +25,16 @@ export const auth = betterAuth({
       trustedProviders: ["google"],
     },
   },
+  // সেশন ও কুকি ক্যাশ কনফিগারেশন একসঙ্গে একটি অবজেক্টের ভেতরে রাখা হয়েছে
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // ৭ দিন (সেকেন্ডে হিসাব)
+    updateAge: 60 * 60 * 24,     // প্রতিদিন সেশন আপডেট হবে
+    cookieCache: {
+      enabled: true,
+      strategy: "jwt",
+      maxAge: 60 * 60 * 24 * 7,
+    },
+  },
   user: {
     additionalFields: {
       district: {
@@ -39,18 +49,7 @@ export const auth = betterAuth({
       },
     },
   },
-  session: {
-    cookieCache: {
-      enabled: true,
-      strategy: "jwt",
-      maxAge: 7 * 24 * 60 * 60, 
-    },
-  },
   plugins: [
-    jwt({
-      jwt: {
-        expirationTime: "7d",
-      }
-    })
+    jwt()
   ]
 });

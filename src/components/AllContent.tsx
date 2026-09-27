@@ -6,8 +6,9 @@ import { authClient } from "@/lib/auth-client";
 
 export default function AllContent() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const userId = session?.user?.id || "user_limon_mia";
+  const { data: session, isPending } = authClient.useSession();
+  
+  const userId = session?.user?.id;
 
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,15 +16,43 @@ export default function AllContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId) return;
+    // সেশন লোড হওয়া পর্যন্ত অপেক্ষা করুন
+    if (isPending) return; 
+
+    // সেশন না থাকলে বা ইউজার না থাকলে এরর দেখান
+    if (!session || !userId) {
+      setLoading(false);
+      setError('Apnake prothome login korte hobe.');
+      return;
+    }
 
     const fetchAllData = async () => {
       try {
         setLoading(true);
 
+        // সেশন বা কুকি থেকে টোকেন রিড করার অপশন (যদি থাকে)
+        const token = (session as any)?.token || (session as any)?.session?.token || "";
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        // credentials: 'include' এবং হেডার সহ ফেচ রিকোয়েস্ট পাঠানো হচ্ছে
         const [postersRes, templatesRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/users/${userId}/posters`),
-          fetch(`http://localhost:5000/api/templates/user/${userId}`)
+          fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/users/${userId}/posters`, { 
+            method: 'GET',
+            headers,
+            credentials: 'include' 
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/templates/user/${userId}`, { 
+            method: 'GET',
+            headers,
+            credentials: 'include' 
+          })
         ]);
 
         const postersData = await postersRes.json();
@@ -62,7 +91,7 @@ export default function AllContent() {
     };
 
     fetchAllData();
-  }, [userId]);
+  }, [isPending, session, userId]);
 
   const handleDownload = async (itemImage: string, itemName: string) => {
     if (!itemImage) {
@@ -92,14 +121,13 @@ export default function AllContent() {
     }
   };
 
-  const handleReuse = (dataType: string, itemId: string) => {
+  const handleReuse = (dataType: string, _itemId: string) => {
     if (dataType === 'template') {
       router.push(`/templates`);
     } else {
       router.push(`/create-poster`);
     }
   };
-
 
   const handleDelete = async (itemId: string, dataType: string) => {
     const confirmMsg = dataType === 'poster' 
@@ -111,11 +139,22 @@ export default function AllContent() {
     try {
       setDeletingId(itemId);
       const endpoint = dataType === 'poster' 
-        ? `http://localhost:5000/api/posters/${itemId}`
-        : `http://localhost:5000/api/templates/${itemId}`;
+        ? `${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/posters/${itemId}`
+        : `${process.env.NEXT_PUBLIC_BETTER_AUTH_SERVER}/api/templates/${itemId}`;
 
+      const token = (session as any)?.token || (session as any)?.session?.token || "";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // ডিলিট রিকোয়েস্টের ক্ষেত্রেও কুকি এবং হেডার যুক্ত করা হলো
       const response = await fetch(endpoint, {
-        method: "DELETE"
+        method: "DELETE",
+        headers,
+        credentials: 'include'
       });
       const result = await response.json();
 
